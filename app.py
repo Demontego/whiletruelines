@@ -1,10 +1,25 @@
-from flask import Flask
+from flask import Flask, render_template
 
-app = Flask(__name__)
+"""
+Задание изображений для редактора ломаной
+Редактор ломаной
+
+
+Визуальное редактирование:
+https://yandex.ru/dev/maps/jsapi/doc/2.1/dg/concepts/geoobjects.html#geoobjects__visual_editing
+
+
+
+"""
+
+app = Flask(__name__, static_url_path='/static')
+pages = "pages"
 
 @app.route('/')
 def hello_world():
-    return 'Hello World!'
+    return render_template("index.html")
+
+
 
 @app.route('/<name>')
 def hello_name(name):
