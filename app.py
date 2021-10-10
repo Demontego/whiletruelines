@@ -34,6 +34,9 @@ class DB():
 
 MAPS_API_KEY = os.environ.get("MAPS_API_KEY", "")
 CONNECTION_STRING = os.environ.get("MONGODB_URI", "")
+for i in os.environ:
+    print(i)
+
 database = DB("mainbase", "maincollection").get_interface()
 app = Flask(__name__, static_url_path='/static', maps_api_key=MAPS_API_KEY)
 
