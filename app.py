@@ -32,10 +32,13 @@ class DB():
         return self._cnt
 
 
-MAPS_API_KEY = os.environ.get("MAPS_API_KEY", "")
-CONNECTION_STRING = os.environ.get("MONGODB_URI", "")
-for i in os.environ:
-    print(i)
+MAPS_API_KEY = os.environ.get("MAPS_API_KEY", "54db9319-2b11-4398-92dc-4e58cbedace4")
+CONNECTION_STRING = os.environ.get("MONGODB_URI", "mongodb+srv://myasnikov-rs:Otukjdf123@cluster0.5iplt.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+
+print("--VARS--")
+os.environ.get("MAPS_API_KEY", "NONE")
+os.environ.get("MONGODB_URI", "NONE")
+print("----")
 
 database = DB("mainbase", "maincollection").get_interface()
 app = Flask(__name__, static_url_path='/static')
