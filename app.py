@@ -38,7 +38,7 @@ for i in os.environ:
     print(i)
 
 database = DB("mainbase", "maincollection").get_interface()
-app = Flask(__name__, static_url_path='/static', maps_api_key=MAPS_API_KEY)
+app = Flask(__name__, static_url_path='/static')
 
 
 
@@ -46,7 +46,7 @@ app = Flask(__name__, static_url_path='/static', maps_api_key=MAPS_API_KEY)
 
 @app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template("index.html", maps_api_key=MAPS_API_KEY)
 
 @app.route('/api/data', methods=['GET', "POST"])
 def dataprocessing():
