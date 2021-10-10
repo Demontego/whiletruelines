@@ -4,17 +4,18 @@ let userlines = [];
 
 
 function init() {
-    // Создаем карту.
     var myMap = new ymaps.Map("map", {
         center: [55.72, 37.64],
         zoom: 10,
-        controls: ['zoomControl', 'typeSelector',  'fullscreenControl']
+        controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
 
     }, {
         searchControlProvider: 'yandex#search'
     });
 
     // Создаем ломаную.
+
+    /*
     var current_polyline1 = new ymaps.Polyline([
         // Указываем координаты вершин.
         [55.80, 37.50],
@@ -37,33 +38,7 @@ function init() {
             return items;
         }
     });
-
-    var current_polyline = new ymaps.Polyline([], {}, {
-        strokeColor: '#00000088',
-        strokeWidth: 4
-    });
-
-
-    // TODO вот это вынести на внешнюю кнопку
-    // Добавляем линию на карту.
-    myMap.geoObjects.add(current_polyline);
-
-    // Включаем режим редактирования.
-    current_polyline.editor.startEditing();
-    current_polyline.editor.startDrawing();
-
-    // $('input').attr('disabled', false);
-    $('#startEditPolyline2').click(
-        function () {
-            // Отключаем кнопки, чтобы на карту нельзя было
-            // добавить более одного редактируемого объекта (чтобы в них не запутаться).
-            // $('input').attr('disabled', true);
-
-            current_polyline.editor.stopEditing();
-
-            // printGeometry(current_polyline.geometry.getCoordinates());
-
-        });
+*/
 
     $('#startEditPolyline').click(
         function () {
@@ -89,45 +64,75 @@ function init() {
         function () {
             polyline.editor.stopEditing();
             data.push(polyline);
-            printGeometry(polyline.geometry.getCoordinates());
-            // $('#stopEditPolyline').attr('disabled', true);
+
+            // printGeometry(polyline.geometry.getCoordinates());
+
 
         });
 
+    $('#saveData').click(
+        function () {
+            sendData(data)
+        }
+    );
 
-    // Обработка нажатия на кнопку Удалить
+
+// Обработка нажатия на кнопку Удалить
     $('#dellPolyline').click(
         function () {
-
+            data.pop()
             myMap.geoObjects.remove(polyline);
             $('#geometry').html('');
             // $('#addPolyline').attr('disabled', false);
         });
+
+
 }
 
+// TODO исправить генерацию имени для линии
+function generateName() {
+    setTimeout(function (){}, 10)
+    var today = new Date();
+    var date = today.getFullYear() + '' + (today.getMonth() + 1) + '' + today.getDate();
+    var time = today.getHours() + '' + today.getMinutes() + '' + today.getSeconds() + '' + today.getMilliseconds();
+    var dateTime = date + '_' + time;
+    return dateTime;
+}
 
+function prepareData(data) {
+    return data.map(function (el) {
+        return {'name': generateName(), 'coord': el.geometry.getCoordinates()};
+    });
+}
 
-
-function printGeometry(coords) {
-    $('#geometry').html('Координаты: ' + stringify(coords));
-
-    function stringify(coords) {
-        var res = '';
-        if ($.isArray(coords)) {
-            res = '[ ';
-            for (var i = 0, l = coords.length; i < l; i++) {
-                if (i > 0) {
-                    res += ', ';
-                }
-                res += stringify(coords[i]);
-            }
-            res += ' ]';
-        } else if (typeof coords == 'number') {
-            res = coords.toPrecision(6);
-        } else if (coords.toString) {
-            res = coords.toString();
+function sendData(dataList) {
+    printList(data);
+    $.ajax({
+        type: 'POST',
+        url: 'http://127.0.0.1:5000/api/data',
+        data: JSON.stringify(prepareData(dataList)),
+        contentType: "application/json; charset=utf-8",
+        traditional: true,
+        success: function (resp) {
+            console.log("Data Loaded: " + resp.code);
         }
+    });
+}
 
-        return res;
+function printList(objects) {
+
+    $('#objlist').html(getList(objects));
+
+    function getList(objects_list) {
+        let result = "";
+
+        if ($.isArray(objects_list)) {
+            for (var i = 0, l = objects_list.length; i < l; i++) {
+                if (i > 0) {
+                    result += '<a href="#" class="list-group-item list-group-item-action active">' + objects_list[i].geometry.getCoordinates()[0] + '</a>';
+                }
+            }
+        }
+        return result;
     }
 }
