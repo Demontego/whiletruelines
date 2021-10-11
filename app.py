@@ -54,9 +54,8 @@ def index():
 @app.route('/api/data', methods=['GET', "POST"])
 def dataprocessing():
     if request.method == "GET":
-        result = {"data": "ok2"}
+        result = [{'name': i['name'], 'coord': i['coord']} for i in database.find()]
         return Response(json.dumps(result), status=201, mimetype='application/json')
-        # return jsonify(result)
 
     elif request.method == "POST":
         jsonchik = request.get_json()
@@ -66,9 +65,6 @@ def dataprocessing():
                 print(i)
         else:
             print("Empty data")
-
-        # return Response(json.dumps(jsonchik), status=201, mimetype='application/json')
-        # database.insert_many(jsonchik)
         return Response(status=200)
 
 

@@ -4,7 +4,7 @@ let userlines = [];
 
 
 function init() {
-    var myMap = new ymaps.Map("map", {
+    let myMap = new ymaps.Map("map", {
         center: [55.72, 37.64],
         zoom: 10,
         controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
@@ -14,31 +14,8 @@ function init() {
     });
 
     // Создаем ломаную.
+    loadData(myMap)
 
-    /*
-    var current_polyline1 = new ymaps.Polyline([
-        // Указываем координаты вершин.
-        [55.80, 37.50],
-        [55.80, 37.40],
-        [55.70, 37.50],
-        [55.70, 37.40]
-    ], {}, {
-        strokeColor: "#00000088",
-        strokeWidth: 4,
-        editorMaxPoints: 50,
-
-        // Добавляем в контекстное меню новый пункт, позволяющий удалить ломаную.
-        editorMenuManager: function (items) {
-            items.push({
-                title: "Удалить линию",
-                onClick: function () {
-                    myMap.geoObjects.remove(current_polyline);
-                }
-            });
-            return items;
-        }
-    });
-*/
 
     $('#startEditPolyline').click(
         function () {
@@ -64,10 +41,6 @@ function init() {
         function () {
             polyline.editor.stopEditing();
             data.push(polyline);
-
-            // printGeometry(polyline.geometry.getCoordinates());
-
-
         });
 
     $('#saveData').click(
@@ -89,13 +62,41 @@ function init() {
 
 }
 
+function showHistoryData(objects, map_obj) {
+    console.log(objects.data)
+
+    objects.map(function (el) {
+        let tmp_line = new ymaps.Polyline(
+            el.coord
+            , {}, {
+                strokeColor: "#00000088",
+                strokeWidth: 4,
+                editorMaxPoints: 50,
+            });
+        map_obj.geoObjects.add(tmp_line);
+    });
+}
+
+function loadData(mmap) {
+    return $.ajax({
+        url: "http://127.0.0.1:5000/api/data",
+        success: function (response) {
+            console.log("Data Loaded: " + response);
+        },
+        dataType: "json"
+    }).then(function (result) {
+        console.log('result', result);
+        return showHistoryData(result, mmap);
+    });
+}
+
+
 // TODO исправить генерацию имени для линии
 function generateName() {
-    setTimeout(function (){}, 10)
-    var today = new Date();
-    var date = today.getFullYear() + '' + (today.getMonth() + 1) + '' + today.getDate();
-    var time = today.getHours() + '' + today.getMinutes() + '' + today.getSeconds() + '' + today.getMilliseconds();
-    var dateTime = date + '_' + time;
+    let today = new Date();
+    let date = today.getFullYear() + '' + (today.getMonth() + 1) + '' + today.getDate();
+    let time = today.getHours() + '' + today.getMinutes() + '' + today.getSeconds() + '' + today.getMilliseconds();
+    let dateTime = date + '_' + time;
     return dateTime;
 }
 
@@ -106,7 +107,6 @@ function prepareData(data) {
 }
 
 function sendData(dataList) {
-    printList(data);
     $.ajax({
         type: 'POST',
         url: 'http://127.0.0.1:5000/api/data',
@@ -114,25 +114,8 @@ function sendData(dataList) {
         contentType: "application/json; charset=utf-8",
         traditional: true,
         success: function (resp) {
+            alert("Success");
             console.log("Data Loaded: " + resp.code);
         }
     });
-}
-
-function printList(objects) {
-
-    $('#objlist').html(getList(objects));
-
-    function getList(objects_list) {
-        let result = "";
-
-        if ($.isArray(objects_list)) {
-            for (var i = 0, l = objects_list.length; i < l; i++) {
-                if (i > 0) {
-                    result += '<a href="#" class="list-group-item list-group-item-action active">' + objects_list[i].geometry.getCoordinates()[0] + '</a>';
-                }
-            }
-        }
-        return result;
-    }
 }
