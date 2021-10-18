@@ -2,6 +2,10 @@ ymaps.ready(init);
 let data = [];
 let userlines = [];
 
+// TODO форма загрузки картинки
+// TODO кнопка отправки картинки
+//
+
 
 function init() {
     let myMap = new ymaps.Map("map", {
