@@ -73,11 +73,9 @@ class GD():
             "ERROR while Google Drive authorization completed")
         self._service = SERVICE
 
-    def download_file(self, filename, folder='web'):
-        folder_id = self.__folders.get(folder)
-        request = self._service.get_media(fileId=filename)
-        print(request.get_json())
-        filename = '/uploads/test.png'
+    def download_file(self, file_id, name):
+        request = self._service.files().get_media(fileId=file_id)
+        filename = f'uploads/{name}'
         fh = io.FileIO(filename, 'wb')
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -94,7 +92,6 @@ class GD():
         }
         media = MediaFileUpload(file_path, resumable=True)
         r = self._service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-        # pp.pprint(r)
         return r
 
 
@@ -105,20 +102,12 @@ UPLOAD_FOLDER = 'uploads'
 
 ALLOWED_EXTENSIONS = {'txt', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'ecw', 'gif', 'ico', 'ilbm', 'jpeg', 'mrsid', 'pcx',
                       'png', 'psd', 'tga', 'tiff', 'webp', 'xbm', 'xps', 'rla', 'rpf', 'pnm', 'rtf'}
-# print("--VARS--")
-# os.environ.get("MAPS_API_KEY", "NONE")
-# os.environ.get("MONGODB_URI", "NONE")
-# print("----")
 
 database = DB("mainbase", "maincollection").get_interface()
 google_drive = GD()
 app = Flask(__name__, static_url_path='/static')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-
-# TODO Приянть картинку и отправить на гугл диск, в ответе направить id загрузки
-
-# TODO API для нейронки, чтобы по id изменить статус на done
 
 # TODO функция чекер статуса по id
 
@@ -147,9 +136,9 @@ def upload_file_test():
             rand_name = ''.join(random.choice(string.hexdigits) for i in range(33))
             resp = google_drive.upload_file(filename, rand_name)
             os.remove(os.path.abspath('uploads/' + filename))
-            # return redirect(url_for('uploaded_file', filename=filename))
             result = {
                 'name': rand_name,
+                'ext': filename.split('.')[-1],
                 'driveIn_id': resp.get('id', 'upload_error'),
                 'driveOut_id': '',
                 'status': 'wait',
@@ -172,9 +161,10 @@ def upload_file_test():
 
 @app.route('/get_file/<name>', methods=['GET'])
 def get_file_ui(name=''):
-    file_id = database.find_one({"name": name}).get('driveOut_id')
-    google_drive.download_file(file_id)
-    return send_file(file_id, mimetype='image/gif')
+    file_data = database.find_one({"name": name})
+    file_id = file_data.get('driveIn_id')
+    google_drive.download_file(file_id, f'{name}.{file_data.get("ext")}')
+    return send_file(f'uploads/{name}.{file_data.get("ext")}', mimetype=f'image/{file_data.get("ext")}')
 
 
 @app.route('/upload_file', methods=['POST'])
@@ -205,6 +195,7 @@ def upload_file():
             else:
                 result = {
                     'name': drive_name,
+                    'ext': filename.split('.')[-1],
                     'driveIn_id': resp.get('id', 'upload_error'),
                     'driveOut_id': '',
                     'status': 'wait',
@@ -256,7 +247,7 @@ def get_status_file(name=None):
         res = database.find_one({"name": name})
         if res:
             res['_id'] = str(res['_id'])
-            return Response(json.dumps(res), status=201)
+            return Response(json.dumps(res), status=200)
     return Response(json.dumps({'status': 'error'}), status=400)
 
 

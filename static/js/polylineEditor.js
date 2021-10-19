@@ -83,7 +83,7 @@ function showHistoryData(objects, map_obj) {
 
 function loadData(mmap) {
     return $.ajax({
-        url: "http://127.0.0.1:5000/api/data",
+        url: "/api/data",
         success: function (response) {
             console.log("Data Loaded: " + response);
         },
@@ -113,7 +113,7 @@ function prepareData(data) {
 function sendData(dataList) {
     $.ajax({
         type: 'POST',
-        url: 'http://127.0.0.1:5000/api/data',
+        url: '/api/data',
         data: JSON.stringify(prepareData(dataList)),
         contentType: "application/json; charset=utf-8",
         traditional: true,
