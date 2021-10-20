@@ -2,7 +2,6 @@ import os
 import json
 import time
 
-from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, abort, jsonify, Response, url_for, send_from_directory, \
     send_file
 from flask_restful import Api, Resource, reqparse, inputs
@@ -127,8 +126,6 @@ def allowed_file(filename):
 @app.route('/test', methods=['GET', 'POST'])
 def upload_file_test():
     if request.method == 'POST':
-        print(request.method)
-        print(request.files)
         file = request.files['file']
         filename = file.filename
         if file and allowed_file(filename):
@@ -161,14 +158,16 @@ def upload_file_test():
 
 @app.route('/get_file/<name>', methods=['GET'])
 def get_file_ui(name=''):
+    '''https://drive.google.com/uc?export=view&id=${resp_data.file_id}'''
     file_data = database.find_one({"name": name})
-    file_id = file_data.get('driveIn_id')
+    file_id = file_data.get('driveOut_id')
     google_drive.download_file(file_id, f'{name}.{file_data.get("ext")}')
     return send_file(f'uploads/{name}.{file_data.get("ext")}', mimetype=f'image/{file_data.get("ext")}')
 
 
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
+    """Interface for NN module. Upload files on google drive and update status of task"""
     if request.method == 'POST':
         file = request.files['file']
         filename = file.filename
@@ -185,8 +184,11 @@ def upload_file():
             os.remove(os.path.abspath('uploads/' + filename))
             if jsonchik:
                 database.update_one({'name': filename.split('.')[0]},
-                                    {'$set': {'driveOut_id': resp.get('id', 'upload_error'), 'status': 'done',
-                                              'coord': jsonchik.get('coord', [])}})
+                                    {'$set': {'driveOut_id': resp.get('id', 'upload_error'),
+                                              'status': 'done',
+                                              'coord': jsonchik.get('coord', [])
+                                              }
+                                     })
 
                 res = database.find_one({'name': filename.split('.')[0]})
                 if res:
@@ -220,6 +222,7 @@ def index():
 
 @app.route('/api/data', methods=['GET', "POST"])
 def dataprocessing():
+    """старая, для обмена координатами на карту"""
     if request.method == "GET":
         result = [{'name': i['name'], 'coord': i['coord']} for i in database.find()]
         return Response(json.dumps(result), status=201, mimetype='application/json')
@@ -269,6 +272,18 @@ def set_status_file(name=None):
             if res:
                 return Response(json.dumps({'status': 'ok'}), status=400)
     return Response(json.dumps({'status': 'error'}), status=400)
+
+
+@app.route('/api/get_queue', methods=['GET'])
+def get_queue():
+    """
+    Return list of objects with status 'wait'
+    """
+    resp = []
+    for i in database.find({'status': 'wait'}):
+        i['_id'] = str(i['_id'])
+        resp.append(i)
+    return Response(json.dumps(resp), status=200)
 
 
 if __name__ == '__main__':
