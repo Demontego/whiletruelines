@@ -5,29 +5,31 @@
     <div class="container">
 
         <h1>Рисуем тропинки на карте</h1>
-        <p>Карта для отрисовки народных троп и дальнейшего сохранения данных</p>
+        <p>Форма для загрузки изображения</p>
 
     </div>
+
     <div class="container">
         <div class="row">
             <div class="col-8">
-                <div id="map" style="width: 100%; height: 600px"></div>
+                <div id="respPict" style="background: cadetblue; width: 100%; height: 600px"></div>
             </div>
             <div class="col-4" style="background: rgba(43,226,141,0.34)">
-                    <button type="button" class="btn btn-secondary btn-block" id="startEditPolyline">Новая линия</button>
-                    <button type="button" class="btn btn-secondary btn-block" id="stopEditPolyline" >Завершить редактирование</button>
-                    <button type="button" class="btn btn-secondary btn-block" id="dellPolyline">Удалить линию</button>
-                    <button type="button" class="btn btn-secondary btn-block" id="saveData">Отправить данные</button>
+                <div class="input-group mb-3">
 
-                <div id="geometry"/>
+                    <form name="uploader" enctype="multipart/form-data" method="POST">
 
-                <div class="row py-3 px-3">
-                    <div id="objlist"/>
+                        <input name="file" type="file"/>
+                        <button type="submit" name="submit" class="btn btn-primary btn-block my-3">Отправить</button>
+                    </form>
                 </div>
+                <div id="fileData"/>
             </div>
         </div>
 
     </div>
+
+    <script src="{{ url_for('static', filename='js/fileUploader.js') }}" type="text/javascript"></script>
 
 
 {% endblock %}
