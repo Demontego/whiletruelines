@@ -156,7 +156,7 @@ def upload_file_test():
         '''
 
 
-@app.route('/get_file/<name>', methods=['GET'])
+@app.route('/api/get_file/<name>', methods=['GET'])
 def get_file_ui(name=''):
     '''https://drive.google.com/uc?export=view&id=${resp_data.file_id}'''
     file_data = database.find_one({"name": name})
@@ -165,7 +165,7 @@ def get_file_ui(name=''):
     return send_file(f'uploads/{name}.{file_data.get("ext")}', mimetype=f'image/{file_data.get("ext")}')
 
 
-@app.route('/upload_file', methods=['POST'])
+@app.route('/api/upload_file', methods=['POST'])
 def upload_file():
     """Interface for NN module. Upload files on google drive and update status of task"""
     if request.method == 'POST':

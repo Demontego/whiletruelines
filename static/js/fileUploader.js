@@ -14,7 +14,7 @@ $("form[name='uploader']").submit(function (e) {
     let formData = new FormData($(this)[0]);
 
     $.ajax({
-        url: '/upload_file',
+        url: '/api/upload_file',
         type: "POST",
         data: formData,
         async: false,
