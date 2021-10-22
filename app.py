@@ -14,6 +14,8 @@ import pprint
 import io
 import random
 import string
+import cv2
+from RoadDetection import RoadDetection
 
 """
 данные в монго
@@ -36,6 +38,7 @@ http://datalytics.ru/all/rabotaem-s-api-google-drive-s-pomoschyu-python/
 https://yandex.ru/dev/maps/jsapi/doc/2.1/dg/concepts/geoobjects.html#geoobjects__visual_editing
 """
 
+model = RoadDetection(path_model='./best_model_LinkNet34.pth')
 
 class DB():
     def __init__(self, base, collection):
@@ -106,7 +109,7 @@ database = DB("mainbase", "maincollection").get_interface()
 google_drive = GD()
 app = Flask(__name__, static_url_path='/static')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
+app.config['MAX_CONTENT_LENGTH'] = 80 * 1000 * 1000
 
 # TODO функция чекер статуса по id
 
@@ -165,6 +168,50 @@ def get_file_ui(name=''):
     return send_file(f'uploads/{name}.{file_data.get("ext")}', mimetype=f'image/{file_data.get("ext")}')
 
 
+# @app.route('/api/upload_file', methods=['POST'])
+# def upload_file():
+#     """Interface for NN module. Upload files on google drive and update status of task"""
+#     if request.method == 'POST':
+#         file = request.files['file']
+#         filename = file.filename
+#         jsonchik = request.get_json() if request.get_json() is not None else {}
+
+#         if file and allowed_file(filename):
+#             drive_name = jsonchik.get('name', ''.join(random.choice(string.hexdigits) for i in range(33)))
+#             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+#             if jsonchik:
+#                 resp = google_drive.upload_file(filename, drive_name, 'fromNN')
+#             else:
+#                 resp = google_drive.upload_file(filename, drive_name)
+
+#             os.remove(os.path.abspath('uploads/' + filename))
+#             if jsonchik:
+#                 database.update_one({'name': filename.split('.')[0]},
+#                                     {'$set': {'driveOut_id': resp.get('id', 'upload_error'),
+#                                               'status': 'done',
+#                                               'coord': jsonchik.get('coord', [])
+#                                               }
+#                                      })
+
+#                 res = database.find_one({'name': filename.split('.')[0]})
+#                 if res:
+#                     res['_id'] = str(res['_id'])
+#                     return Response(json.dumps(res), status=201)
+#             else:
+#                 result = {
+#                     'name': drive_name,
+#                     'ext': filename.split('.')[-1],
+#                     'driveIn_id': resp.get('id', 'upload_error'),
+#                     'driveOut_id': '',
+#                     'status': 'wait',
+#                     'coord': [],
+#                     'tag': 'img'
+#                 }
+#                 database.insert(result)
+#                 result['_id'] = str(result['_id'])
+#                 return Response(json.dumps(result), status=201, mimetype='application/json')
+#     return Response(json.dumps({'status': 'error'}), status=400)
+
 @app.route('/api/upload_file', methods=['POST'])
 def upload_file():
     """Interface for NN module. Upload files on google drive and update status of task"""
@@ -174,39 +221,25 @@ def upload_file():
         jsonchik = request.get_json() if request.get_json() is not None else {}
 
         if file and allowed_file(filename):
-            drive_name = jsonchik.get('name', ''.join(random.choice(string.hexdigits) for i in range(33)))
+            drive_name = jsonchik.get('name', ''.join(
+                random.choice(string.hexdigits) for i in range(33)))
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            if jsonchik:
-                resp = google_drive.upload_file(filename, drive_name, 'fromNN')
-            else:
-                resp = google_drive.upload_file(filename, drive_name)
-
+            image, mask, heatmap = model.predict(
+                os.path.join(app.config['UPLOAD_FOLDER'], filename))
             os.remove(os.path.abspath('uploads/' + filename))
-            if jsonchik:
-                database.update_one({'name': filename.split('.')[0]},
-                                    {'$set': {'driveOut_id': resp.get('id', 'upload_error'),
-                                              'status': 'done',
-                                              'coord': jsonchik.get('coord', [])
-                                              }
-                                     })
-
-                res = database.find_one({'name': filename.split('.')[0]})
-                if res:
-                    res['_id'] = str(res['_id'])
-                    return Response(json.dumps(res), status=201)
-            else:
-                result = {
-                    'name': drive_name,
-                    'ext': filename.split('.')[-1],
-                    'driveIn_id': resp.get('id', 'upload_error'),
-                    'driveOut_id': '',
-                    'status': 'wait',
-                    'coord': [],
-                    'tag': 'img'
-                }
-                database.insert(result)
-                result['_id'] = str(result['_id'])
-                return Response(json.dumps(result), status=201, mimetype='application/json')
+            filename = filename.split('.')[0]
+            cv2.imwrite(os.path.join(
+                app.config['UPLOAD_FOLDER'], filename+'_done.jpg'), image)
+            cv2.imwrite(os.path.join(
+                app.config['UPLOAD_FOLDER'], filename+'_mask.jpg'), mask)
+            cv2.imwrite(os.path.join(
+                app.config['UPLOAD_FOLDER'], filename+'_heatmap.jpg'), heatmap)
+            result = {
+                'name_image': filename+'_done.jpg',
+                'name_mask': filename+'_mask.jpg',
+                'name_heatmap': filename+'_heatmap.jpg',
+            }
+            return Response(json.dumps(result), status=201, mimetype='application/json')
     return Response(json.dumps({'status': 'error'}), status=400)
 
 
