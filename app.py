@@ -1,16 +1,13 @@
 import os
 import json
-import time
 
-from flask import Flask, render_template, request, redirect, abort, jsonify, Response, url_for, send_from_directory, \
-    send_file
+from flask import Flask, render_template, request, abort, jsonify, Response, send_from_directory, send_file
 from flask_restful import Api, Resource, reqparse, inputs
 import certifi
 from pymongo import MongoClient
 from google.oauth2 import service_account
 from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 from googleapiclient.discovery import build
-import pprint
 import io
 import random
 import string
@@ -65,8 +62,6 @@ class GD():
     }
 
     def __init__(self):
-        # pp = pprint.PrettyPrinter(indent=4)
-        # pp.pprint(r)
         credentials = service_account.Credentials.from_service_account_file(self._service_account_file,
                                                                             scopes=self.scopes)
         SERVICE = build('drive', 'v3', credentials=credentials)
@@ -85,11 +80,11 @@ class GD():
             status, done = downloader.next_chunk()
             print("Download %d%%." % int(status.progress() * 100))
 
-    def upload_file(self, filename, drive_name, folder='web'):
+    def upload_file(self, filename, local_name, folder='web'):
         folder_id = self.__folders.get(folder)
         file_path = "uploads/" + filename
         file_metadata = {
-            'name': drive_name + '.' + filename.split('.')[-1],
+            'name': local_name + '.' + filename.split('.')[-1],
             'parents': [folder_id]
         }
         media = MediaFileUpload(file_path, resumable=True)
@@ -126,38 +121,6 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[-1] in ALLOWED_EXTENSIONS
 
 
-@app.route('/test', methods=['GET', 'POST'])
-def upload_file_test():
-    if request.method == 'POST':
-        file = request.files['file']
-        filename = file.filename
-        if file and allowed_file(filename):
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            rand_name = ''.join(random.choice(string.hexdigits) for i in range(33))
-            resp = google_drive.upload_file(filename, rand_name)
-            os.remove(os.path.abspath('uploads/' + filename))
-            result = {
-                'name': rand_name,
-                'ext': filename.split('.')[-1],
-                'driveIn_id': resp.get('id', 'upload_error'),
-                'driveOut_id': '',
-                'status': 'wait',
-                'coord': [],
-                'tag': 'img'
-            }
-            database.insert(result)
-            return Response(json.dumps({'name': rand_name}), status=201, mimetype='application/json')
-    if request.method == 'GET':
-        return '''
-        <!doctype html>
-        <title>Upload new File</title>
-        <h1>Upload new File</h1>
-        <form action="" method=post enctype=multipart/form-data>
-          <p><input type=file name=file>
-             <input type=submit value=Upload>
-        </form>
-        '''
-
 
 @app.route('/api/get_file/<name>', methods=['GET'])
 def get_file_ui(name=''):
@@ -168,76 +131,27 @@ def get_file_ui(name=''):
     return send_file(f'uploads/{name}.{file_data.get("ext")}', mimetype=f'image/{file_data.get("ext")}')
 
 
-# @app.route('/api/upload_file', methods=['POST'])
-# def upload_file():
-#     """Interface for NN module. Upload files on google drive and update status of task"""
-#     if request.method == 'POST':
-#         file = request.files['file']
-#         filename = file.filename
-#         jsonchik = request.get_json() if request.get_json() is not None else {}
-
-#         if file and allowed_file(filename):
-#             drive_name = jsonchik.get('name', ''.join(random.choice(string.hexdigits) for i in range(33)))
-#             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-#             if jsonchik:
-#                 resp = google_drive.upload_file(filename, drive_name, 'fromNN')
-#             else:
-#                 resp = google_drive.upload_file(filename, drive_name)
-
-#             os.remove(os.path.abspath('uploads/' + filename))
-#             if jsonchik:
-#                 database.update_one({'name': filename.split('.')[0]},
-#                                     {'$set': {'driveOut_id': resp.get('id', 'upload_error'),
-#                                               'status': 'done',
-#                                               'coord': jsonchik.get('coord', [])
-#                                               }
-#                                      })
-
-#                 res = database.find_one({'name': filename.split('.')[0]})
-#                 if res:
-#                     res['_id'] = str(res['_id'])
-#                     return Response(json.dumps(res), status=201)
-#             else:
-#                 result = {
-#                     'name': drive_name,
-#                     'ext': filename.split('.')[-1],
-#                     'driveIn_id': resp.get('id', 'upload_error'),
-#                     'driveOut_id': '',
-#                     'status': 'wait',
-#                     'coord': [],
-#                     'tag': 'img'
-#                 }
-#                 database.insert(result)
-#                 result['_id'] = str(result['_id'])
-#                 return Response(json.dumps(result), status=201, mimetype='application/json')
-#     return Response(json.dumps({'status': 'error'}), status=400)
-
 @app.route('/api/upload_file', methods=['POST'])
 def upload_file():
     """Interface for NN module. Upload files on google drive and update status of task"""
     if request.method == 'POST':
         file = request.files['file']
-        filename = file.filename
+        file_ext = file.filename.split('.')[-1]
         jsonchik = request.get_json() if request.get_json() is not None else {}
 
-        if file and allowed_file(filename):
-            drive_name = jsonchik.get('name', ''.join(
-                random.choice(string.hexdigits) for i in range(33)))
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            image, mask, heatmap = model.predict(
-                os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            os.remove(os.path.abspath('uploads/' + filename))
-            filename = filename.split('.')[0]
-            cv2.imwrite(os.path.join(
-                app.config['UPLOAD_FOLDER'], filename+'_done.jpg'), image)
-            cv2.imwrite(os.path.join(
-                app.config['UPLOAD_FOLDER'], filename+'_mask.jpg'), mask)
-            cv2.imwrite(os.path.join(
-                app.config['UPLOAD_FOLDER'], filename+'_heatmap.jpg'), heatmap)
+        if file and allowed_file(file.filenameame):
+            local_name = ''.join(random.choice(string.hexdigits) for i in range(33))
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'{file_ext}'))
+
+            image, mask, heatmap = model.predict(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
+            os.remove(os.path.abspath('uploads/' + local_name + f'.{file_ext}'))
+            cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name+'_done.jpg'), image)
+            cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name+'_mask.jpg'), mask)
+            cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name+'_heatmap.jpg'), heatmap)
             result = {
-                'name_image': filename+'_done.jpg',
-                'name_mask': filename+'_mask.jpg',
-                'name_heatmap': filename+'_heatmap.jpg',
+                'name_image': local_name+'_done.jpg',
+                'name_mask': local_name+'_mask.jpg',
+                'name_heatmap': local_name+'_heatmap.jpg',
             }
             return Response(json.dumps(result), status=201, mimetype='application/json')
     return Response(json.dumps({'status': 'error'}), status=400)
