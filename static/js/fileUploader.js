@@ -27,19 +27,19 @@ function show_result() {
 
     var newImg = document.createElement('img');
     // newImg.src = `https://drive.google.com/uc?export=view&id=${resp_data.driveIn_id}`;
-    newImg.src = `${resp_data.name_image}`;
+    newImg.src = `/uploads/${resp_data.name_image}`;
     newImg.alt = 'alt text';
     newImg.class = "img-fluid";
     document.getElementById('respPict').appendChild(newImg);
 
     var newImg2 = document.createElement('img');
-    newImg2.src = `${resp_data.name_mask}`;
+    newImg2.src = `/uploads/${resp_data.name_mask}`;
     newImg2.alt = 'alt text';
     newImg2.class = "img-fluid";
     document.getElementById('respPict').appendChild(newImg2);
 
     var newImg3 = document.createElement('img');
-    newImg3.src = `${resp_data.name_heatmap}`;
+    newImg3.src = `/uploads/${resp_data.name_heatmap}`;
     newImg3.alt = 'alt text';
     newImg3.class = "img-fluid";
     document.getElementById('respPict').appendChild(newImg3);
