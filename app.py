@@ -31,8 +31,8 @@ http://datalytics.ru/all/rabotaem-s-api-google-drive-s-pomoschyu-python/
 Визуальное редактирование:
 https://yandex.ru/dev/maps/jsapi/doc/2.1/dg/concepts/geoobjects.html#geoobjects__visual_editing
 """
-device = 'gpu' if torch.cuda.is_available() else 'cpu'
-model = RoadDetection(path_model='./best_model_LinkNet34.pth', device=device)
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+model = RoadDetection(path_model='./best_model_LinkNet34.pth', device=device, img_size=1024)
 
 
 

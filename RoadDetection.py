@@ -10,7 +10,7 @@ class RoadDetection:
     Model detect road on map and predict mask, heatmap of image
     """
 
-    def __init__(self, path_model='./best_model_LinkNet.pth', img_size=4096, device='cpu', enc=None, enc_w=None):
+    def __init__(self, path_model='./best_model_LinkNet34.pth', img_size=4096, device='cpu', enc=None, enc_w=None):
         """
         path_model - path to load model for inference,
         img_size - size of out image, mask and heatmap
@@ -22,7 +22,7 @@ class RoadDetection:
         self.model.eval()
         self.select_classes = ['background', 'road']
         self.select_class_rgb_values = [[0, 0, 0], [255, 255, 255]]
-        self.device = torch.device('cpu')
+        self.device = torch.device(device)
         if enc == None:
             enc = self.model.name[self.model.name.find('-')+1:]
         if enc_w == None:
@@ -51,7 +51,7 @@ class RoadDetection:
             self.reverse_one_hot(pred_mask))
         img_vis = img_vis * (pred_mask == 0) + \
             (pred_mask // 255) * np.array([128, 0, 128])
-        return img_vis, pred_mask, pred_road_heatmap
+        return img_vis, pred_mask, (pred_road_heatmap*255).astype(int)
 
     def reverse_one_hot(self, pred_mask):
         x = np.argmax(pred_mask, axis=-1)
