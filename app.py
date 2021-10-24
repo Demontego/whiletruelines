@@ -11,7 +11,7 @@ import torch
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = RoadDetection(path_model='./best_model_LinkNet34.pth', device=device, img_size=1024)
-
+print('model loaded!')
 UPLOAD_FOLDER = 'uploads'
 
 ALLOWED_EXTENSIONS = {'txt', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'ecw', 'gif', 'ico', 'ilbm', 'jpeg', 'mrsid', 'pcx',
@@ -63,4 +63,4 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="0.0.0.0")
