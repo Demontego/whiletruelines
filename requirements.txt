@@ -1,0 +1,6 @@
+albumentations==0.5.2
+Flask==2.0.2
+numpy==1.20.3
+opencv_python_headless==4.5.1.48
+segmentation_models_pytorch==0.2.0
+torch==1.9.1
