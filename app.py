@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, Response, send_from_directory
 import random
 import string
 import cv2
+from geojson import dump
 
 from RoadDetection import RoadDetection
 import torch
@@ -43,15 +44,21 @@ def upload_file():
             local_name = ''.join(random.choice(string.hexdigits) for i in range(33))
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
 
-            image, mask, heatmap = model.predict(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
+            image, mask, heatmap,  geojson_data, geojson_show = model.predict(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
             os.remove(os.path.abspath('uploads/' + local_name + f'.{file_ext}'))
             cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_done.jpg'), image)
             cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_mask.jpg'), mask)
             cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_heatmap.jpg'), heatmap)
+            with open(local_name + '_geoshow.geojson', 'w') as f:
+                dump(geojson_show, f)
+            with open(local_name + '_geodata.geojson', 'w') as f:
+                dump(geojson_data, f)
             result = {
                 'name_image': local_name + '_done.jpg',
                 'name_mask': local_name + '_mask.jpg',
                 'name_heatmap': local_name + '_heatmap.jpg',
+                'name_geodata': local_name + '_geodata.geojson',
+                'name_geoshow': local_name + '_geoshow.geojson',
             }
             return Response(json.dumps(result), status=201, mimetype='application/json')
     return Response(json.dumps({'status': 'error'}), status=400)
