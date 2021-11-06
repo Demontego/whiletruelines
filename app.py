@@ -37,13 +37,19 @@ def allowed_file(filename):
 def upload_file():
     """Interface for NN module. Upload files on google drive and update status of task"""
     if request.method == 'POST':
+        files = []
+        # local_name = '2797fAD464aED315e74d8aa07dE150c91'
         local_name = ''.join(random.choice(string.hexdigits) for i in range(33))
-        dat_list = request.files.getlist('file')
+
         for file in request.files.getlist('file'):
             file_ext = file.filename.split('.')[-1]
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
+            files.append(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
+            file.save(files[-1])
+
         image, mask, heatmap,  geojson_data, geojson_show = model.predict(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
-        os.remove(os.path.abspath('uploads/' + local_name + f'.{file_ext}'))
+        for f in files:
+            os.remove(os.path.abspath(f))
+
         cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_done.jpg'), image)
         cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_mask.jpg'), mask)
         cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_heatmap.jpg'), heatmap)

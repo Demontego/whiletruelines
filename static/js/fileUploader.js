@@ -2,18 +2,18 @@ let resp_data;
 
 $("form[name='uploader']").submit(function (e) {
     let formData = new FormData($(this)[0]);
-
+    alert("Если в файле tfw допущена ошибка, то отмеченные тропинки будут смещены. Обработка может занять некоторое время");
     $.ajax({
         url: '/api/upload_file',
         type: "POST",
         data: formData,
         async: false,
         success: function (msg) {
-            alert("Если в файле tfw допущена ошибка, то отмеченные тропинки будут смещены");
             resp_data = msg;
             show_result();
         },
         error: function (msg) {
+            console.log(msg)
             alert('Ошибка!');
         },
         cache: false,
@@ -43,4 +43,11 @@ function show_result() {
     newImg3.alt = 'heatmap';
     newImg3.class = "img-fluid";
     document.getElementById('fileData_heatmap').appendChild(newImg3);
+
+    var geo_download = document.createElement('a');
+    geo_download.appendChild(document.createTextNode("Скачать geojson"));
+    geo_download.href = `/uploads/${resp_data.name_geodata}`;
+    geo_download.download = `/uploads/${resp_data.name_geodata}`;
+    geo_download.className = "btn btn-secondary btn-block my-3";
+    document.getElementById('geodata_json').appendChild(geo_download);
 }
