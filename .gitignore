@@ -1,3 +1,6 @@
-/venv/
+__pycache__/RoadDetection.cpython-38.pyc
+/uploads_container/
 /.idea/
-/notes.txt
+1_geoshow.json
+1_geodata.json
+deploy.sh

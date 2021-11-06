@@ -1,30 +1,19 @@
 let resp_data;
-// let resp_data = {
-//     "name": "eC7F2662dd75Cf82a65F4b7713CA8D9Fa",
-//     "ext": "png",
-//     "driveIn_id": "1LhRV2tP4jAfY9RcE0UHpHKc-eAw9_UJT",
-//     "driveOut_id": "",
-//     "status": "wait",
-//     "coord": [],
-//     "tag": "img"
-// }
 
 $("form[name='uploader']").submit(function (e) {
-    console.log("catched")
     let formData = new FormData($(this)[0]);
-
+    alert("Если в файле tfw допущена ошибка, то отмеченные тропинки будут смещены. Обработка может занять некоторое время");
     $.ajax({
         url: '/api/upload_file',
         type: "POST",
         data: formData,
         async: false,
         success: function (msg) {
-            alert("Success");
             resp_data = msg;
-            $('#fileData').html(msg);
-            subscribe();
+            show_result();
         },
         error: function (msg) {
+            console.log(msg)
             alert('Ошибка!');
         },
         cache: false,
@@ -34,35 +23,31 @@ $("form[name='uploader']").submit(function (e) {
     e.preventDefault();
 });
 
-
 function show_result() {
+
     var newImg = document.createElement('img');
-    newImg.src = `https://drive.google.com/uc?export=view&id=${resp_data.driveIn_id}`;
-    newImg.alt = 'alt text';
-    newImg.class = "img-fluid";
-    document.getElementById('respPict').appendChild(newImg);
-}
+    newImg.src = `/uploads/${resp_data.name_image}`;
+    newImg.alt = 'done';
+    newImg.class = "img-fluid top-cover center-block";
+    newImg.style = "max-width: 100%; height: auto;"
+    document.getElementById('fileData_done').appendChild(newImg);
 
+    var newImg2 = document.createElement('img');
+    newImg2.src = `/uploads/${resp_data.name_mask}`;
+    newImg2.alt = 'mask';
+    newImg2.class = "img-fluid";
+    document.getElementById('fileData_mask').appendChild(newImg2);
 
-function check_status() {
-    return $.ajax({
-        url: `/api/get_status_file/${resp_data.name}`,
-        success: function (response) {
-            return response;
-        },
-        dataType: "json"
-    }).then(function (result) {
-        resp_data = result;
-    });
-}
+    var newImg3 = document.createElement('img');
+    newImg3.src = `/uploads/${resp_data.name_heatmap}`;
+    newImg3.alt = 'heatmap';
+    newImg3.class = "img-fluid";
+    document.getElementById('fileData_heatmap').appendChild(newImg3);
 
-
-async function subscribe() {
-    check_status();
-    if (resp_data.status === 'done') {
-        show_result();
-    } else {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        await subscribe();
-    }
+    var geo_download = document.createElement('a');
+    geo_download.appendChild(document.createTextNode("Скачать geojson"));
+    geo_download.href = `/uploads/${resp_data.name_geodata}`;
+    geo_download.download = `/uploads/${resp_data.name_geodata}`;
+    geo_download.className = "btn btn-secondary btn-block my-3";
+    document.getElementById('geodata_json').appendChild(geo_download);
 }
