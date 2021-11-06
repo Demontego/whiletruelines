@@ -38,7 +38,6 @@ def upload_file():
     """Interface for NN module. Upload files on google drive and update status of task"""
     if request.method == 'POST':
         files = []
-        # local_name = '2797fAD464aED315e74d8aa07dE150c91'
         local_name = ''.join(random.choice(string.hexdigits) for i in range(33))
 
         for file in request.files.getlist('file'):
@@ -46,7 +45,8 @@ def upload_file():
             files.append(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
             file.save(files[-1])
 
-        image, mask, heatmap,  geojson_data, geojson_show = model.predict(os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
+        image, mask, heatmap, geojson_data, geojson_show = model.predict(
+            os.path.join(app.config['UPLOAD_FOLDER'], local_name + f'.{file_ext}'))
         for f in files:
             os.remove(os.path.abspath(f))
 
@@ -54,7 +54,7 @@ def upload_file():
         cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_mask.jpg'), mask)
         cv2.imwrite(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_heatmap.jpg'), heatmap)
         with open(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_geoshow.geojson'), 'w') as f:
-            dump(geojson_show, f)
+            dump(replace_coordinates(geojson_show), f)
         with open(os.path.join(app.config['UPLOAD_FOLDER'], local_name + '_geodata.geojson'), 'w') as f:
             dump(geojson_data, f)
         result = {
@@ -71,6 +71,13 @@ def upload_file():
 @app.route('/')
 def index():
     return render_template("index.html")
+
+
+def replace_coordinates(data):
+    for general in data['coordinates']:
+        for row in general:
+            row[0], row[1] = row[1], row[0]
+    return data
 
 
 if __name__ == '__main__':

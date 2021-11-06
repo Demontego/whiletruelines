@@ -1,8 +1,49 @@
+ymaps.ready(init);
 let resp_data;
+let geoshow_data;
+let general_map;
+let elements = []
+
+function init() {
+    let myMap = new ymaps.Map("map", {
+        center: [55.72, 37.64],
+        zoom: 10,
+        controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
+
+    }, {
+        searchControlProvider: 'yandex#search'
+    });
+    general_map = myMap
+
+}
+
+
+function showHistoryData() {
+    console.log(geoshow_data)
+
+    var myGeoObject = new ymaps.GeoObject({
+        // Описываем геометрию геообъекта.
+        geometry: geoshow_data,
+        // fillRule: "nonZero"
+        properties: {
+            balloonContent: "Многоугольник"
+        }
+    }, {
+        fillColor: '#00FF00',
+        strokeColor: '#0000FF',
+        opacity: 0.5,
+        strokeWidth: 3,
+        strokeStyle: 'solid'
+    });
+    general_map.geoObjects.add(myGeoObject);
+    general_map.setBounds(general_map.geoObjects.getBounds());
+}
+
 
 $("form[name='uploader']").submit(function (e) {
     let formData = new FormData($(this)[0]);
     alert("Если в файле tfw допущена ошибка, то отмеченные тропинки будут смещены. Обработка может занять некоторое время");
+    elements.map(el => {el.remove()})
     $.ajax({
         url: '/api/upload_file',
         type: "POST",
@@ -23,7 +64,24 @@ $("form[name='uploader']").submit(function (e) {
     e.preventDefault();
 });
 
+function getFile(fileName) {
+    let request = new XMLHttpRequest();
+    request.open('GET', fileName);
+    request.onloadend = function () {
+        parse(request.responseText);
+    }
+    request.send();
+}
+
+function parse(obj) {
+    geoshow_data = JSON.parse(obj);
+    showHistoryData();
+}
+
+
+
 function show_result() {
+    getFile(`/uploads/${resp_data.name_geoshow}`);
 
     var newImg = document.createElement('img');
     newImg.src = `/uploads/${resp_data.name_image}`;
@@ -50,4 +108,6 @@ function show_result() {
     geo_download.download = `/uploads/${resp_data.name_geodata}`;
     geo_download.className = "btn btn-secondary btn-block my-3";
     document.getElementById('geodata_json').appendChild(geo_download);
+
+    elements = [newImg, newImg2, newImg3, geo_download]
 }
