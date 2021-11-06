@@ -11,6 +11,8 @@ RUN pip install Flask==2.0.2
 RUN pip install numpy==1.20.3
 RUN pip install opencv_python_headless==4.5.1.48
 RUN pip install segmentation_models_pytorch==0.2.0
+RUN pip install pyproj==3.2.1
+RUN pip install geojson==2.5.0
 
 COPY static ./static/
 COPY templates ./templates/

@@ -9,7 +9,7 @@ $("form[name='uploader']").submit(function (e) {
         data: formData,
         async: false,
         success: function (msg) {
-            alert("Обработка может занять некоторое время");
+            alert("Если в файле tfw допущена ошибка, то отмеченные тропинки будут смещены");
             resp_data = msg;
             show_result();
         },
